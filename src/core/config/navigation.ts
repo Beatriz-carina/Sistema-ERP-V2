@@ -16,6 +16,8 @@ export interface ErpModulo {
   path: string;
   nombre: string;
   icon: LucideIcon;
+  /** Una línea que explica para qué sirve el módulo. Se muestra al abrirlo. */
+  descripcion?: string;
   /** Pantallas del módulo. Se muestran debajo del módulo cuando está abierto. */
   submodulos?: ErpSubmodulo[];
 }
@@ -36,6 +38,7 @@ export const ERP_MENU: ErpGrupo[] = [
       {
         path: 'dashboard',
         nombre: 'Dashboard',
+        descripcion: 'Resumen de ventas, compras, utilidad y caja. Solo lee lo que producen los demás módulos.',
         icon: LayoutDashboard,
       },
     ],
@@ -46,6 +49,7 @@ export const ERP_MENU: ErpGrupo[] = [
       {
         path: 'mantenimiento',
         nombre: 'Mantenimiento',
+        descripcion: 'Datos base: clientes, proveedores, productos y almacenes. Los demás módulos los usan.',
         icon: Database,
       },
     ],
@@ -56,6 +60,7 @@ export const ERP_MENU: ErpGrupo[] = [
       {
         path: 'ventas',
         nombre: 'Ventas',
+        descripcion: 'Vende y factura. Al emitir la factura baja el stock y se genera el cobro.',
         icon: ShoppingCart,
         submodulos: [
           { path: 'cotizaciones', nombre: 'Cotizaciones' },
@@ -66,6 +71,7 @@ export const ERP_MENU: ErpGrupo[] = [
       {
         path: 'compras',
         nombre: 'Compras',
+        descripcion: 'Pide y recibe mercadería. Al recibir sube el stock y se genera la deuda con el proveedor.',
         icon: Truck,
         submodulos: [
           { path: 'ordenes', nombre: 'Órdenes de compra' },
@@ -75,6 +81,7 @@ export const ERP_MENU: ErpGrupo[] = [
       {
         path: 'inventario',
         nombre: 'Inventario',
+        descripcion: 'Stock por almacén, movimientos y ajustes con motivo.',
         icon: Boxes,
         submodulos: [
           { path: 'stock', nombre: 'Stock' },
@@ -84,6 +91,7 @@ export const ERP_MENU: ErpGrupo[] = [
       {
         path: 'tesoreria',
         nombre: 'Tesorería',
+        descripcion: 'Caja, bancos, cobros y pagos. Sin caja abierta no se mueve efectivo.',
         icon: Wallet,
         submodulos: [
           { path: 'caja', nombre: 'Caja' },
@@ -100,11 +108,13 @@ export const ERP_MENU: ErpGrupo[] = [
       {
         path: 'documentos',
         nombre: 'Documentos',
+        descripcion: 'Archivo de las facturas y comprobantes que el sistema guarda al comprar y vender.',
         icon: FolderOpen,
       },
       {
         path: 'reportes',
         nombre: 'Reportes',
+        descripcion: 'Consultas y exportación de lo registrado en el sistema.',
         icon: BarChart3,
       },
     ],
@@ -115,11 +125,13 @@ export const ERP_MENU: ErpGrupo[] = [
       {
         path: 'administracion',
         nombre: 'Administración',
+        descripcion: 'Usuarios, roles y permisos, datos de la empresa y auditoría.',
         icon: ShieldCheck,
       },
       {
         path: 'cloud',
         nombre: 'Cloud',
+        descripcion: 'Servicios en la nube del proyecto.',
         icon: Cloud,
       },
     ],

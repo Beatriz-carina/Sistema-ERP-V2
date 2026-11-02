@@ -30,6 +30,7 @@ export const ErpLayout: React.FC = () => {
       <div className="flex-1 min-w-0 flex flex-col">
         <ErpHeader
           titulo={actual?.nombre ?? 'EnterpriseCloud'}
+          descripcion={actual?.descripcion}
           onOpenMenu={() => setMenuAbierto(true)}
         />
         <main className="flex-1 overflow-y-auto p-4 sm:p-8">
