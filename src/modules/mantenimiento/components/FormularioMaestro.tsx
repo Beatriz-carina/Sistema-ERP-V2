@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import type { ErpState } from '../../../core/types';
-import type { Campo, ConfigMaestro, Valores } from '../config/maestros';
+import type { ConfigMaestro, Valores } from '../config/maestros';
 import { Buscador } from '../../../core/components/Buscador';
 import { Opciones } from '../../../core/components/Opciones';
+import { validarCampo } from '../config/validacion';
 
 interface Props {
   config: ConfigMaestro;
@@ -15,14 +16,6 @@ interface Props {
   enviando?: boolean;
 }
 
-const CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function validarCampo(c: Campo, valor: string, todos: Record<string, string>): string | null {
-  if (c.requerido && valor.trim() === '') return 'Este campo es obligatorio.';
-  if (c.tipo === 'correo' && !CORREO.test(valor)) return 'Ingresa un correo válido.';
-  if (c.tipo === 'numero' && !(Number.isFinite(Number(valor)) && Number(valor) >= 0)) return 'Ingresa un número mayor o igual a cero.';
-  return c.validar ? c.validar(valor, todos) : null;
-}
 
 export const FormularioMaestro: React.FC<Props> = ({ config, state, inicial, esEdicion, onGuardar, onCancelar, enviando = false }) => {
   const [valores, setValores] = useState<Record<string, string>>(

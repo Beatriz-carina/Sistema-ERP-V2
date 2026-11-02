@@ -165,6 +165,27 @@ function crearMaestro<K extends ColeccionMaestra>(
   return { ok: true, id };
 }
 
+/**
+ * Carga varios registros maestros en una sola operación (importación desde CSV).
+ * Todo o nada: si algo no cabe, no se guarda nada. Queda una sola entrada en la auditoría.
+ * La pantalla ya validó cada fila con las reglas de Mantenimiento; aquí se vuelve a cuidar el límite de registros.
+ */
+function importarMaestros<K extends ColeccionMaestra>(
+  col: K, filas: Array<Omit<ErpState[K][number], 'id'>>,
+): Resultado {
+  const { prefijo, etiqueta } = META[col];
+  const accion = `Importar en ${etiqueta}`;
+  if (filas.length === 0) return fallo('No hay filas válidas para importar.');
+  const lista = state[col] as Array<{ id: string }>;
+  if (lista.length + filas.length > LIMITE_REGISTROS) {
+    return rechazar('Mantenimiento', accion, `Se superaría el límite de ${LIMITE_REGISTROS} registro(s) en ${etiqueta}.`);
+  }
+  const nuevos = filas.map((d, i) => ({ ...d, id: `${nuevoId(prefijo)}-${i}` }));
+  commit({ ...state, [col]: [...lista, ...nuevos] } as ErpState,
+    { modulo: 'Mantenimiento', accion, registroId: `${nuevos.length} registros`, resultado: 'Exitoso' });
+  return { ok: true, id: 'importacion' };
+}
+
 function actualizarMaestro<K extends ColeccionMaestra>(
   col: K, id: string, cambios: Partial<ErpState[K][number]>,
 ): Resultado {
@@ -769,7 +790,7 @@ export const erpStore = {
     return () => { listeners.delete(listener); };
   },
   acciones: {
-    crearMaestro, actualizarMaestro, eliminarMaestro,
+    crearMaestro, actualizarMaestro, eliminarMaestro, importarMaestros,
     registrarCotizacion, aceptarCotizacion, registrarOrdenVenta, facturarOrdenVenta,
     registrarOrdenCompra, recibirOrdenCompra, registrarAjuste, liquidarCuenta, registrarMovimientoBanco,
     abrirCaja, cerrarCaja, registrarDocumento, eliminarDocumento, actualizarPermisos, restablecer,

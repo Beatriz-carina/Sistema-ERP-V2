@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { FileUp, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useErp } from '../../../core/hooks/useErp';
 import { useAccion } from '../../../core/hooks/useAccion';
 import { api } from '../../../core/services/api';
@@ -10,6 +10,7 @@ import { Insignia } from '../../../core/components/Insignia';
 import { Modal } from '../../../core/components/Modal';
 import type { ConfigMaestro, Valores } from '../config/maestros';
 import { FormularioMaestro } from './FormularioMaestro';
+import { ImportarCsv } from './ImportarCsv';
 
 interface Aviso { tipo: 'ok' | 'error'; texto: string }
 
@@ -24,6 +25,7 @@ export const MaestroCrud: React.FC<{ config: ConfigMaestro }> = ({ config }) => 
   const [editando, setEditando] = useState<Valores | 'nuevo' | null>(null);
   const [porEliminar, setPorEliminar] = useState<Valores | null>(null);
   const [aviso, setAviso] = useState<Aviso | null>(null);
+  const [importando, setImportando] = useState(false);
 
   const columnas: ColumnaTabla<Valores>[] = config.columnas.map((c) => ({
     titulo: c.titulo,
@@ -69,7 +71,17 @@ export const MaestroCrud: React.FC<{ config: ConfigMaestro }> = ({ config }) => 
             ? `${filas.length} de ${LIMITE_REGISTROS} ${config.plural} ${fem ? 'permitidas' : 'permitidos'} en esta versión de prueba.`
             : `${filas.length} ${filas.length === 1 ? config.singular : config.plural} ${fem ? 'registrada' : 'registrado'}${filas.length === 1 ? '' : 's'}.`}
         </p>
-        {botonNuevo}
+        <div className="flex flex-wrap gap-2">
+          {config.importable && (
+            <button
+              onClick={() => { setAviso(null); setImportando(true); }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+            >
+              <FileUp className="w-4 h-4" /> Importar CSV
+            </button>
+          )}
+          {botonNuevo}
+        </div>
       </div>
 
       {aviso && (
@@ -130,6 +142,17 @@ export const MaestroCrud: React.FC<{ config: ConfigMaestro }> = ({ config }) => 
             enviando={enviando}
           />
         </Modal>
+      )}
+
+      {importando && (
+        <ImportarCsv
+          config={config}
+          onCerrar={() => setImportando(false)}
+          onImportado={(n) => {
+            setImportando(false);
+            setAviso({ tipo: 'ok', texto: `Se importaron ${n} ${n === 1 ? config.singular : config.plural}.` });
+          }}
+        />
       )}
 
       {porEliminar && (

@@ -36,6 +36,10 @@ export interface ConfigMaestro {
   inicial: Valores;
   /** Para los textos: "Nuevo cliente" o "Nueva categoría". */
   genero?: 'm' | 'f';
+  /** Si se puede cargar desde un archivo CSV. */
+  importable?: boolean;
+  /** Campo que no puede repetirse (RUC, documento, código). Sirve para detectar duplicados al importar. */
+  unico?: string;
 }
 
 /* ───────── Piezas reutilizables ───────── */
@@ -70,6 +74,7 @@ function catalogo(coleccion: Catalogo, tab: string, singular: string, plural: st
 export const MAESTROS: ConfigMaestro[] = [
   {
     coleccion: 'clientes', tab: 'Clientes', singular: 'cliente', plural: 'clientes',
+    importable: true, unico: 'numeroDocumento',
     columnas: [
       { titulo: 'Documento', celda: (f) => `${f.tipoDocumento} ${f.numeroDocumento}` },
       { titulo: 'Razón social', celda: (f) => f.razonSocial },
@@ -93,6 +98,7 @@ export const MAESTROS: ConfigMaestro[] = [
   },
   {
     coleccion: 'proveedores', tab: 'Proveedores', singular: 'proveedor', plural: 'proveedores',
+    importable: true, unico: 'ruc',
     columnas: [
       { titulo: 'RUC', celda: (f) => f.ruc },
       { titulo: 'Razón social', celda: (f) => f.razonSocial },

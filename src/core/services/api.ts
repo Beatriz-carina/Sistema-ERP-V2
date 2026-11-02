@@ -50,6 +50,7 @@ export const api = {
     crear: endpoint('POST /api/v1/{coleccion}', a.crearMaestro as (col: ColeccionMaestra, datos: never) => Resultado),
     actualizar: endpoint('PUT /api/v1/{coleccion}/{id}', a.actualizarMaestro as (col: ColeccionMaestra, id: string, datos: never) => Resultado),
     eliminar: endpoint('DELETE /api/v1/{coleccion}/{id}', a.eliminarMaestro),
+    importar: endpoint('POST /api/v1/{coleccion}/import', a.importarMaestros as (col: ColeccionMaestra, filas: never[]) => Resultado),
   },
   ventas: {
     registrarCotizacion: endpoint('POST /api/v1/sales/quotes', a.registrarCotizacion),
