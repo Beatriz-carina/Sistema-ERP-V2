@@ -59,6 +59,15 @@ export const ImportarCsv: React.FC<Props> = ({ config, onImportado, onCerrar }) 
             ))}
           </p>
           <p className="text-xs text-slate-500">* obligatorio. Una celda vacía usa el valor por defecto (por ejemplo, Estado = Activo).</p>
+          {config.campos.filter((c) => c.tipo === 'buscar' || c.tipo === 'select').map((c) => {
+            const nombres = (c.opciones?.(state) ?? []).map((o) => o.label);
+            return (
+              <p key={c.clave} className="text-xs text-slate-500">
+                <strong className="font-medium text-slate-600">{c.etiqueta}</strong> se escribe por nombre y debe existir antes:{' '}
+                {nombres.length === 0 ? 'aún no hay ninguno, créalo en Mantenimiento.' : `${nombres.slice(0, 5).join(', ')}${nombres.length > 5 ? '…' : ''}.`}
+              </p>
+            );
+          })}
         </div>
 
         <div className="flex flex-wrap items-center gap-3">

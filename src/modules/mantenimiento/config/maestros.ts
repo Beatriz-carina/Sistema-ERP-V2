@@ -119,6 +119,7 @@ export const MAESTROS: ConfigMaestro[] = [
   },
   {
     coleccion: 'productos', tab: 'Productos', singular: 'producto', plural: 'productos',
+    importable: true, unico: 'codigo',
     columnas: [
       { titulo: 'Código', celda: (f) => f.codigo },
       { titulo: 'Producto', celda: (f) => f.nombre },

@@ -32,7 +32,7 @@ export function leerCsv(texto: string): string[][] {
     if (comillas) {
       if (c === '"') { if (t[i + 1] === '"') { celda += '"'; i++; } else comillas = false; }
       else celda += c;
-    } else if (c === '"') comillas = true;
+    } else if (c === '"' && celda === '') comillas = true;   // una comilla en medio de la celda es un carácter más (24")
     else if (c === sep) { fila.push(celda); celda = ''; }
     else if (c === '\n' || c === '\r') {
       if (c === '\r' && t[i + 1] === '\n') i++;

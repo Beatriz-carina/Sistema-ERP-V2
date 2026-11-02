@@ -1,7 +1,10 @@
 import type { ErpState } from '../../../core/types';
 import { leerCsv } from '../../../core/utils/csv';
-import type { ConfigMaestro, Valores } from './maestros';
+import type { Campo, ConfigMaestro, Valores } from './maestros';
 import { validarCampo } from './validacion';
+
+/** Campos que se eligen de una lista: se escriben por nombre y se guardan por identificador. */
+const esCatalogo = (c: Campo): boolean => c.tipo === 'opciones' || c.tipo === 'buscar' || c.tipo === 'select';
 
 const norm = (t: string): string => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
 
@@ -51,19 +54,24 @@ export function analizarCsv(texto: string, config: ConfigMaestro, state: ErpStat
     for (const c of config.campos) {
       let valor = columna.has(c.clave) ? (fila[columna.get(c.clave)!] ?? '').trim() : '';
       if (valor === '') valor = porDefecto(c.clave);
-      if (c.tipo === 'opciones') {
-        const opcion = c.opciones?.(state).find((o) => norm(o.value) === norm(valor) || norm(o.label) === norm(valor));
+      if (esCatalogo(c)) {
+        // Se escribe el nombre ("Lenovo") y se guarda el identificador. Lo que no existe no se crea solo.
+        const lista = c.opciones?.(state) ?? [];
+        const opcion = lista.find((o) => norm(o.value) === norm(valor) || norm(o.label) === norm(valor));
         if (opcion) v[c.clave] = opcion.value;
         else {
           v[c.clave] = valor;
-          errores.push(`${c.etiqueta}: usa ${(c.opciones?.(state) ?? []).map((o) => o.label).join(' o ')}.`);
+          if (valor === '') errores.push(`${c.etiqueta}: Este campo es obligatorio.`);
+          else if (c.tipo === 'opciones') errores.push(`${c.etiqueta}: usa ${lista.map((o) => o.label).join(' o ')}.`);
+          else errores.push(`${c.etiqueta}: "${valor}" no existe. Créalo antes en Mantenimiento.`);
         }
       } else {
-        v[c.clave] = valor;
+        // Excel en español escribe los decimales con coma (1800,50).
+        v[c.clave] = c.tipo === 'numero' && /^\d+,\d+$/.test(valor) ? valor.replace(',', '.') : valor;
       }
     }
     for (const c of config.campos) {
-      if (c.tipo === 'opciones') continue;
+      if (esCatalogo(c)) continue;
       const err = validarCampo(c, v[c.clave], v);
       if (err) errores.push(`${c.etiqueta}: ${err}`);
     }
