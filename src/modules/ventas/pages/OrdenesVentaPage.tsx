@@ -41,7 +41,7 @@ export const OrdenesVentaPage: React.FC = () => {
             </button>
           </div>
         ) : null}
-        vacio="Registra una orden de venta, o acepta una cotización para generarla."
+        vacio="Registra una orden de venta o amplía el rango de fechas."
       />
 
       {creando && (

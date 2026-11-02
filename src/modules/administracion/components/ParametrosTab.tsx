@@ -39,7 +39,7 @@ export const ParametrosTab: React.FC = () => {
         <div className="max-w-xl">
           <h3 className="font-semibold text-slate-900">Guía de pasos</h3>
           <p className="text-sm text-slate-500 mt-1">
-            Muestra la barra de pasos (Cotización → Orden → Factura → Cobro) en Ventas y Compras. Apágala si tus clientes no siguen siempre el mismo recorrido.
+            Muestra la barra de pasos (Orden → Factura → Cobro) en Ventas y Compras. Apágala si tus clientes no siguen siempre el mismo recorrido.
           </p>
         </div>
         <button

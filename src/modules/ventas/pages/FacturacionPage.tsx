@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { FileUp } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useErp } from '../../../core/hooks/useErp';
 import { useAccion } from '../../../core/hooks/useAccion';
@@ -10,12 +11,14 @@ import { AvisoFlujo, type Aviso } from '../../../core/components/AvisoFlujo';
 import { DataTable, type ColumnaTabla } from '../../../core/components/DataTable';
 import { Insignia } from '../../../core/components/Insignia';
 import { ListaDocumentos } from '../../../core/components/operaciones/ListaDocumentos';
+import { ImportarVentasCsv } from '../components/ImportarVentasCsv';
 import type { FilaDocumento } from '../../../core/utils/filas';
 
 export const FacturacionPage: React.FC = () => {
   const { state } = useErp();
   const { enviando, ejecutar } = useAccion();
   const [aviso, setAviso] = useState<Aviso | null>(null);
+  const [importando, setImportando] = useState(false);
 
   const navigate = useNavigate();
   const porFacturar = filasOrdenesVenta(state).filter((o) => o.estado === 'Pendiente');
@@ -47,7 +50,13 @@ export const FacturacionPage: React.FC = () => {
       {aviso && <AvisoFlujo aviso={aviso} onCerrar={() => setAviso(null)} />}
 
       <section className="space-y-3">
-        <h2 className="font-semibold text-slate-900">Órdenes pendientes de facturar</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-semibold text-slate-900">Órdenes pendientes de facturar</h2>
+          <button onClick={() => { setAviso(null); setImportando(true); }}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500">
+            <FileUp className="w-4 h-4" /> Importar ventas CSV
+          </button>
+        </div>
         {porFacturar.length === 0 ? (
           <p className="text-sm text-slate-500">
             No hay órdenes esperando factura. Se generan en{' '}
@@ -87,6 +96,8 @@ export const FacturacionPage: React.FC = () => {
           vacio="Aún no se emitió ninguna factura en este período."
         />
       </section>
+
+      {importando && <ImportarVentasCsv onCerrar={() => setImportando(false)} />}
     </div>
   );
 };

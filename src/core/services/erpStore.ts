@@ -1,6 +1,6 @@
 import type {
   ColeccionMaestra, CondicionPago, Empresa, ErpState, LineaDetalle,
-  MovimientoInventario, MovimientoBanco, MovimientoCaja, Resultado, Auditoria, SesionCaja,
+  MovimientoInventario, MovimientoBanco, MovimientoCaja, OrdenCompra, Resultado, Auditoria, SesionCaja,
 } from '../types';
 import { crearEstadoInicial } from './seed';
 import { CLAVE_DEMO, sesion } from './sesion';
@@ -313,6 +313,29 @@ function registrarOrdenVenta(d: DatosDocumentoVenta): Resultado {
 }
 
 /** Emite la factura de una orden de venta: descuenta stock, archiva el comprobante y abre el estado de cuenta. */
+/**
+ * Importa ventas desde un CSV. Cada venta pasa por las mismas dos operaciones de siempre (registrar la orden
+ * y emitir la factura), con sus reglas de stock, límite de crédito y caja abierta.
+ * Cada venta es independiente: la que no cumple se deshace por completo (orden, stock, caja, auditoría) y queda
+ * un solo rechazo con el motivo; las demás siguen. Las ventas se procesan en el orden del archivo.
+ */
+function importarVentas(ventas: Array<DatosDocumentoVenta & { referencia: string }>): Resultado {
+  if (ventas.length === 0) return fallo('No hay ventas válidas para importar.');
+  const avisos: string[] = [];
+  let facturadas = 0;
+  for (const { referencia, ...datos } of ventas) {
+    const antes = state;
+    const orden = registrarOrdenVenta(datos);
+    const factura = orden.ok ? facturarOrdenVenta(orden.id) : orden;
+    if (factura.ok) { facturadas++; continue; }
+    commit(antes);
+    const motivo = `Venta ${referencia}: ${factura.error}`;
+    rechazar('Ventas', 'Importar ventas', motivo, referencia);
+    avisos.push(motivo);
+  }
+  return { ok: true, id: String(facturadas), avisos };
+}
+
 function facturarOrdenVenta(ordenId: string): Resultado {
   const M = 'Ventas', A = 'Emitir factura';
   const s = state;
@@ -394,10 +417,57 @@ function registrarOrdenCompra(d: DatosOrdenCompra): Resultado {
   const numero = numerar('OC', s.ordenesCompra.length);
   commit({
     ...s,
-    ordenesCompra: [...s.ordenesCompra, { id, numero, fecha: ahora(), ...d, ...armarDetalle(d.detalle), estado: 'Pendiente', compraId: '' }],
+    ordenesCompra: [...s.ordenesCompra, { id, numero, fecha: ahora(), ...d, ...armarDetalle(d.detalle), estado: 'Por aprobar', compraId: '' }],
   }, { modulo: M, accion: A, registroId: numero, resultado: 'Exitoso' });
   return { ok: true, id };
 }
+
+const MOTIVO_NO_RECIBIBLE: Record<OrdenCompra['estado'], string> = {
+  'Por aprobar': 'La orden aún no fue aprobada por el gerente.', Pendiente: '', Recibida: 'La orden ya fue recibida.',
+  Anulada: 'La orden está anulada.', Rechazada: 'La orden fue rechazada por el gerente.',
+};
+
+/** Rol que aprueba las compras (el gerente o dueño). */
+export const ROL_APROBADOR = 'Administrador';
+
+const esAprobador = (s: ErpState): boolean => {
+  const usuario = s.usuarios.find((u) => u.id === sesion.getUsuarioId());
+  return s.roles.find((r) => r.id === usuario?.rolId)?.nombre === ROL_APROBADOR;
+};
+
+/**
+ * El gerente decide sobre una orden de compra Por aprobar. Al aprobar, la autorización queda archivada en
+ * Documentos y la orden pasa a Kardex; al rechazar, se pide el motivo y la orden no se recibe ni se paga.
+ */
+function decidirOrdenCompra(ordenId: string, decision: 'Aprobada' | 'Rechazada', motivo = ''): Resultado {
+  const M = 'Compras', A = decision === 'Aprobada' ? 'Aprobar orden de compra' : 'Rechazar orden de compra';
+  const s = state;
+  const orden = s.ordenesCompra.find((o) => o.id === ordenId);
+  if (!orden) return rechazar(M, A, 'La orden de compra no existe.');
+  if (!esAprobador(s)) return rechazar(M, A, `Solo el rol ${ROL_APROBADOR} aprueba o rechaza compras.`, orden.numero);
+  if (orden.estado !== 'Por aprobar') return rechazar(M, A, 'La orden ya no está por aprobar.', orden.numero);
+  const texto = motivo.trim();
+  if (decision === 'Rechazada' && texto.length < 5) return fallo('Escribe el motivo del rechazo (mínimo 5 caracteres).');
+
+  const fecha = ahora();
+  const aprobacion = { fecha, usuario: usuarioActual(s), decision, ...(texto ? { motivo: texto } : {}) };
+  const aprobada = decision === 'Aprobada';
+  const nombreArchivo = `AUT-${orden.numero}.pdf`;
+  commit({
+    ...s,
+    ordenesCompra: s.ordenesCompra.map((o) => (o.id === orden.id ? { ...o, estado: aprobada ? 'Pendiente' : 'Rechazada', aprobacion } : o)),
+    documentos: aprobada
+      ? [...s.documentos, {
+        id: nuevoId('DOC'), nombre: nombreArchivo, tipo: 'Autorización de compra', tamanoKb: 64, fecha,
+        entidad: 'Orden de compra', entidadId: orden.id, rutaS3: `${BUCKET_S3}/autorizaciones/${nombreArchivo}`,
+      }]
+      : s.documentos,
+  }, { modulo: M, accion: A, registroId: orden.numero, resultado: 'Exitoso', ...(texto ? { detalle: texto } : {}) });
+  return { ok: true, id: orden.id };
+}
+
+const aprobarOrdenCompra = (id: string) => decidirOrdenCompra(id, 'Aprobada');
+const rechazarOrdenCompra = (id: string, motivo: string) => decidirOrdenCompra(id, 'Rechazada', motivo);
 
 /** Recibe la orden en Kardex: entra el stock, se archiva la factura y se abre el estado de cuenta. */
 function recibirOrdenCompra(ordenId: string): Resultado {
@@ -405,8 +475,8 @@ function recibirOrdenCompra(ordenId: string): Resultado {
   const s = state;
   const orden = s.ordenesCompra.find((o) => o.id === ordenId);
   if (!orden) return rechazar(M, A, 'La orden de compra no existe.');
-  // Solo una orden Pendiente se recibe: ni una ya recibida ni una anulada.
-  if (orden.estado !== 'Pendiente') return rechazar(M, A, orden.estado === 'Anulada' ? 'La orden está anulada.' : 'La orden ya fue recibida.', orden.numero);
+  // Solo una orden aprobada (Pendiente de recibir) entra a Kardex.
+  if (orden.estado !== 'Pendiente') return rechazar(M, A, MOTIVO_NO_RECIBIBLE[orden.estado], orden.numero);
   if (s.compras.length >= LIMITE_REGISTROS) return rechazar(M, A, `Se alcanzó el límite de ${LIMITE_REGISTROS} registro en recepciones.`, orden.numero);
   if (!s.proveedores.some((p) => p.id === orden.proveedorId && p.estado === 'Activo')) return rechazar(M, A, 'El proveedor de la orden ya no está activo.', orden.numero);
   // Una compra al contado saca dinero de Caja: la caja debe estar abierta y alcanzar para pagarla.
@@ -474,7 +544,9 @@ function anular(col: ColeccionAnulable, modulo: string, accion: string, id: stri
   const doc = state[col].find((d) => d.id === id);
   if (!doc) return rechazar(modulo, accion, 'El documento no existe.');
   if (doc.estado === 'Anulada') return rechazar(modulo, accion, 'El documento ya está anulado.', doc.numero);
-  if (doc.estado !== 'Pendiente') return rechazar(modulo, accion, `No se puede anular. ${SIGUIENTE_PASO[col]}`, doc.numero);
+  if (doc.estado === 'Rechazada') return rechazar(modulo, accion, 'No se puede anular: la orden fue rechazada por el gerente.', doc.numero);
+  // Una orden de compra todavía Por aprobar también se puede anular (por quien la creó).
+  if (doc.estado !== 'Pendiente' && doc.estado !== 'Por aprobar') return rechazar(modulo, accion, `No se puede anular. ${SIGUIENTE_PASO[col]}`, doc.numero);
   const texto = motivo.trim();
   if (texto.length < 5) return fallo('Escribe el motivo de la anulación (mínimo 5 caracteres).');
 
@@ -791,8 +863,8 @@ export const erpStore = {
   },
   acciones: {
     crearMaestro, actualizarMaestro, eliminarMaestro, importarMaestros,
-    registrarCotizacion, aceptarCotizacion, registrarOrdenVenta, facturarOrdenVenta,
-    registrarOrdenCompra, recibirOrdenCompra, registrarAjuste, liquidarCuenta, registrarMovimientoBanco,
+    registrarCotizacion, aceptarCotizacion, registrarOrdenVenta, facturarOrdenVenta, importarVentas,
+    registrarOrdenCompra, aprobarOrdenCompra, rechazarOrdenCompra, recibirOrdenCompra, registrarAjuste, liquidarCuenta, registrarMovimientoBanco,
     abrirCaja, cerrarCaja, registrarDocumento, eliminarDocumento, actualizarPermisos, restablecer,
     iniciarSesion, cerrarSesion,
     anularCotizacion, anularOrdenVenta, anularOrdenCompra, actualizarEmpresa,

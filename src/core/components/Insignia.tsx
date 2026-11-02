@@ -7,8 +7,8 @@ const ESTILOS: Record<string, string> = {
   Activo: VERDE, Emitida: VERDE, Recibida: VERDE, Cancelada: VERDE, Normal: VERDE, Ingreso: VERDE, Exitoso: VERDE,
   Pagada: VERDE, Aceptada: VERDE, Facturada: VERDE, Depósito: VERDE,
   Inactivo: 'bg-slate-100 text-slate-500',
-  Crédito: AMBAR, Pendiente: AMBAR, Retiro: AMBAR, 'Stock bajo': AMBAR,
-  Anulada: GRIS, Vencida: ROJO, 'Sin stock': ROJO, Egreso: ROJO, Rechazado: ROJO,
+  Crédito: AMBAR, Pendiente: AMBAR, 'Por aprobar': AMBAR, Retiro: AMBAR, 'Stock bajo': AMBAR,
+  Anulada: GRIS, Rechazada: ROJO, Vencida: ROJO, 'Sin stock': ROJO, Egreso: ROJO, Rechazado: ROJO,
   Contado: GRIS, Compra: GRIS, Venta: GRIS, Ajuste: GRIS,
 };
 

@@ -125,6 +125,14 @@ export interface Compra {
 /* ───────── Documentos previos al comprobante ───────── */
 
 /** Quién anuló un documento pendiente, cuándo y por qué. El documento no se borra: queda con estado Anulada. */
+/** Quién aprobó o rechazó una orden de compra, y cuándo. El motivo solo se pide al rechazar. */
+export interface Aprobacion {
+  fecha: string;
+  usuario: string;
+  decision: 'Aprobada' | 'Rechazada';
+  motivo?: string;
+}
+
 export interface Anulacion {
   fecha: string;
   usuario: string;
@@ -177,9 +185,12 @@ export interface OrdenCompra {
   subtotal: number;
   igv: number;
   total: number;
-  estado: 'Pendiente' | 'Recibida' | 'Anulada';
+  /** Por aprobar → (el gerente decide) → Pendiente (aprobada, por recibir) o Rechazada. */
+  estado: 'Por aprobar' | 'Pendiente' | 'Recibida' | 'Anulada' | 'Rechazada';
   compraId: string;
   anulacion?: Anulacion;
+  /** Decisión del gerente sobre la compra. Las órdenes anteriores a este control no la tienen y se consideran aprobadas. */
+  aprobacion?: Aprobacion;
 }
 
 /* ───────── Inventario ───────── */
@@ -267,10 +278,10 @@ export interface MovimientoBanco {
 export interface Documento {
   id: string;
   nombre: string;
-  tipo: 'Comprobante de venta' | 'Factura de proveedor' | 'Contrato' | 'Otro';
+  tipo: 'Comprobante de venta' | 'Factura de proveedor' | 'Autorización de compra' | 'Contrato' | 'Otro';
   tamanoKb: number;
   fecha: string;
-  entidad: 'Venta' | 'Compra' | 'Otro';
+  entidad: 'Venta' | 'Compra' | 'Orden de compra' | 'Otro';
   entidadId: string;
   /** Ruta simulada del objeto en Amazon S3. */
   rutaS3: string;
@@ -338,4 +349,5 @@ export type ColeccionMaestra =
   | 'clientes' | 'proveedores' | 'productos' | 'almacenes' | 'vendedores'
   | 'categorias' | 'marcas' | 'unidades' | 'monedas' | 'usuarios' | 'bancos' | 'cuentasBancarias';
 
-export type Resultado = { ok: true; id: string } | { ok: false; error: string };
+/** `avisos` acompaña a un éxito parcial: la operación se hizo, pero una parte no cumplió las reglas (importaciones). */
+export type Resultado = { ok: true; id: string; avisos?: string[] } | { ok: false; error: string };

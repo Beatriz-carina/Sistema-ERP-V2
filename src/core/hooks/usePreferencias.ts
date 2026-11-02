@@ -6,7 +6,7 @@ import { useSyncExternalStore } from 'react';
  * Para sumar una preferencia nueva: agrégala a `Preferencias` y a `POR_DEFECTO`.
  */
 export interface Preferencias {
-  /** Barra de pasos (Cotización → Orden → Factura → Cobro) en Ventas y Compras. */
+  /** Barra de pasos (Orden → Factura → Cobro) en Ventas y Compras. */
   guiaPasos: boolean;
 }
 

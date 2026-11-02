@@ -1,8 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useErp } from '../../../core/hooks/useErp';
 import { usePreferencias } from '../../../core/hooks/usePreferencias';
+import { ruta } from '../../../core/config/navigation';
 import { CadenaFlujo, type PasoFlujo } from '../../../core/components/CadenaFlujo';
-import { CotizacionesPage } from './CotizacionesPage';
 import { OrdenesVentaPage } from './OrdenesVentaPage';
 import { FacturacionPage } from './FacturacionPage';
 import { ComprobantePage } from './ComprobantePage';
@@ -13,8 +13,6 @@ export const VentasPage: React.FC = () => {
   const cobrar = state.cuentas.filter((c) => c.tipo === 'Cobrar');
 
   const pasos: PasoFlujo[] = [
-    { sub: 'cotizaciones', titulo: 'Cotizaciones', cantidad: state.cotizaciones.length,
-      pendientes: state.cotizaciones.filter((c) => c.estado === 'Pendiente').length, textoPendiente: 'por aceptar' },
     { sub: 'ordenes', titulo: 'Órdenes de venta', cantidad: state.ordenesVenta.length, pendientes: 0, textoPendiente: '' },
     { sub: 'facturacion', titulo: 'Facturación', cantidad: state.ventas.length,
       pendientes: state.ordenesVenta.filter((o) => o.estado === 'Pendiente').length, textoPendiente: 'por facturar' },
@@ -27,12 +25,12 @@ export const VentasPage: React.FC = () => {
     <div className="max-w-6xl space-y-6">
       {prefs.guiaPasos && <CadenaFlujo modulo="ventas" pasos={pasos} />}
       <Routes>
-        <Route index element={<Navigate to="cotizaciones" replace />} />
-        <Route path="cotizaciones" element={<CotizacionesPage />} />
+        <Route index element={<Navigate to="ordenes" replace />} />
         <Route path="ordenes" element={<OrdenesVentaPage />} />
         <Route path="facturacion" element={<FacturacionPage />} />
         <Route path="comprobante/:id" element={<ComprobantePage />} />
-        <Route path="*" element={<Navigate to="cotizaciones" replace />} />
+        {/* Ruta absoluta: un Navigate relativo dentro de "*" se vuelve a evaluar y redirige sin fin (por ejemplo, un enlace viejo a /ventas/cotizaciones). */}
+        <Route path="*" element={<Navigate to={ruta('ventas', 'ordenes')} replace />} />
       </Routes>
     </div>
   );

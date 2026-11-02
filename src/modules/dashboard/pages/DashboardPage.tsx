@@ -66,9 +66,6 @@ export const DashboardPage: React.FC = () => {
   }
 
   // Documentos que esperan una acción en el flujo
-  for (const c of state.cotizaciones.filter((x) => x.estado === 'Pendiente')) {
-    alertas.push({ clave: `cot-${c.id}`, ruta: 'ventas/cotizaciones', critica: false, texto: `Cotización ${c.numero} por aceptar` });
-  }
   for (const o of state.ordenesVenta.filter((x) => x.estado === 'Pendiente')) {
     alertas.push({ clave: `ov-${o.id}`, ruta: 'ventas/facturacion', critica: false, texto: `Orden de venta ${o.numero} por facturar` });
   }

@@ -9,10 +9,12 @@ interface Props {
   onAnular: (motivo: string) => Promise<Resultado>;
   onExito: () => void;
   onCerrar: () => void;
+  /** Qué se hace con el documento; por defecto "Anular". También sirve para "Rechazar". */
+  accion?: 'Anular' | 'Rechazar';
 }
 
 /** Confirma la anulación de un documento pendiente y pide el motivo (queda en la auditoría). */
-export const ModalAnular: React.FC<Props> = ({ documento, onAnular, onExito, onCerrar }) => {
+export const ModalAnular: React.FC<Props> = ({ documento, onAnular, onExito, onCerrar, accion = 'Anular' }) => {
   const [motivo, setMotivo] = useState('');
   const [error, setError] = useState('');
   const { enviando, ejecutar } = useAccion();
@@ -25,7 +27,7 @@ export const ModalAnular: React.FC<Props> = ({ documento, onAnular, onExito, onC
   };
 
   return (
-    <Modal titulo={`Anular ${documento}`} onCerrar={onCerrar} ancho="sm">
+    <Modal titulo={`${accion} ${documento}`} onCerrar={onCerrar} ancho="sm">
       <form onSubmit={confirmar} noValidate className="space-y-4">
         <div>
           <label htmlFor="anular-motivo" className="block text-sm font-medium text-slate-700 mb-1">Motivo</label>
@@ -43,7 +45,7 @@ export const ModalAnular: React.FC<Props> = ({ documento, onAnular, onExito, onC
           </button>
           <button type="submit" disabled={enviando}
             className="px-4 py-2 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 disabled:opacity-60 disabled:cursor-wait focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2">
-            {enviando ? 'Anulando…' : 'Anular'}
+            {enviando ? (accion === 'Anular' ? 'Anulando…' : 'Rechazando…') : accion}
           </button>
         </div>
       </form>

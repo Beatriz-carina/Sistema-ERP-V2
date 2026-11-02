@@ -28,6 +28,7 @@ export const DocumentosPage: React.FC = () => {
 
   const vinculo = (d: Documento): string => {
     if (d.entidad === 'Venta') return `Factura ${state.ventas.find((v) => v.id === d.entidadId)?.numero ?? ''}`;
+    if (d.entidad === 'Orden de compra') return `Orden ${state.ordenesCompra.find((o) => o.id === d.entidadId)?.numero ?? ''}`;
     if (d.entidad === 'Compra') return `Recepción ${state.compras.find((c) => c.id === d.entidadId)?.numero ?? ''}`;
     return 'Sin vínculo';
   };

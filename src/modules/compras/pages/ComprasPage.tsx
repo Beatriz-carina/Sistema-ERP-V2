@@ -11,7 +11,8 @@ export const ComprasPage: React.FC = () => {
   const pagar = state.cuentas.filter((c) => c.tipo === 'Pagar');
 
   const pasos: PasoFlujo[] = [
-    { sub: 'ordenes', titulo: 'Órdenes de compra', cantidad: state.ordenesCompra.length, pendientes: 0, textoPendiente: '' },
+    { sub: 'ordenes', titulo: 'Órdenes de compra', cantidad: state.ordenesCompra.length,
+      pendientes: state.ordenesCompra.filter((o) => o.estado === 'Por aprobar').length, textoPendiente: 'por aprobar' },
     { sub: 'kardex', titulo: 'Kardex', cantidad: state.compras.length,
       pendientes: state.ordenesCompra.filter((o) => o.estado === 'Pendiente').length, textoPendiente: 'por recibir' },
     // El pago ocurre en Tesorería: la cadena muestra el puente entre los dos módulos.

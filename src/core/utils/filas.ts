@@ -16,8 +16,10 @@ export interface FilaDocumento {
   documentoId: string;
   /** Recorrido del documento: de dónde viene y a dónde va. */
   traza: string[];
-  /** Solo si el documento fue anulado. */
+  /** Solo si el documento fue anulado (o la orden de compra rechazada por el gerente). */
   anulacion?: Anulacion;
+  /** Quién aprobó una orden de compra y cuándo. */
+  aprobadaPor?: { usuario: string; fecha: string };
 }
 
 /* ───────── Trazabilidad ───────── */
@@ -92,7 +94,9 @@ export const filasOrdenesCompra = (s: ErpState): FilaDocumento[] =>
   s.ordenesCompra.map((o) => ({
     id: o.id, numero: o.numero, fecha: o.fecha, tercero: proveedor(s, o.proveedorId), condicion: o.condicion,
     estado: o.estado, subtotal: o.subtotal, igv: o.igv, total: o.total, detalle: o.detalle, documentoId: '',
-    traza: trazaCompra(s, { ordenId: o.id }), anulacion: o.anulacion,
+    traza: trazaCompra(s, { ordenId: o.id }),
+    anulacion: o.anulacion ?? (o.aprobacion?.decision === 'Rechazada' ? { ...o.aprobacion, motivo: o.aprobacion.motivo ?? '' } : undefined),
+    aprobadaPor: o.aprobacion?.decision === 'Aprobada' ? o.aprobacion : undefined,
   }));
 
 export const filasRecepciones = (s: ErpState): FilaDocumento[] =>

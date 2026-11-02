@@ -60,10 +60,9 @@ export const ERP_MENU: ErpGrupo[] = [
       {
         path: 'ventas',
         nombre: 'Ventas',
-        descripcion: 'Vende y factura. Al emitir la factura baja el stock y se genera el cobro.',
+        descripcion: 'Vende y factura: orden de venta, factura y cobro. Al emitir la factura baja el stock y se genera el cobro.',
         icon: ShoppingCart,
         submodulos: [
-          { path: 'cotizaciones', nombre: 'Cotizaciones' },
           { path: 'ordenes', nombre: 'Órdenes de venta' },
           { path: 'facturacion', nombre: 'Facturación' },
         ],

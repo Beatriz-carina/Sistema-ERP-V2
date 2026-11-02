@@ -27,8 +27,14 @@ export const DetalleOperacion: React.FC<Props> = ({ titulo, etiquetaTercero, fil
 
       {fila.anulacion && (
         <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
-          <p className="font-medium text-slate-800">Anulada por {fila.anulacion.usuario} · {formatFechaHora(fila.anulacion.fecha)}</p>
+          <p className="font-medium text-slate-800">{fila.estado === 'Rechazada' ? 'Rechazada' : 'Anulada'} por {fila.anulacion.usuario} · {formatFechaHora(fila.anulacion.fecha)}</p>
           <p className="text-slate-600 mt-0.5">Motivo: {fila.anulacion.motivo}</p>
+        </div>
+      )}
+
+      {fila.aprobadaPor && (
+        <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm">
+          <p className="font-medium text-emerald-800">Aprobada por {fila.aprobadaPor.usuario} · {formatFechaHora(fila.aprobadaPor.fecha)}</p>
         </div>
       )}
 
