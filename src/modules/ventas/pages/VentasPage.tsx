@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useErp } from '../../../core/hooks/useErp';
+import { usePreferencias } from '../../../core/hooks/usePreferencias';
 import { CadenaFlujo, type PasoFlujo } from '../../../core/components/CadenaFlujo';
 import { CotizacionesPage } from './CotizacionesPage';
 import { OrdenesVentaPage } from './OrdenesVentaPage';
@@ -8,6 +9,7 @@ import { ComprobantePage } from './ComprobantePage';
 
 export const VentasPage: React.FC = () => {
   const { state } = useErp();
+  const { prefs } = usePreferencias();
   const cobrar = state.cuentas.filter((c) => c.tipo === 'Cobrar');
 
   const pasos: PasoFlujo[] = [
@@ -23,7 +25,7 @@ export const VentasPage: React.FC = () => {
 
   return (
     <div className="max-w-6xl space-y-6">
-      <CadenaFlujo modulo="ventas" pasos={pasos} />
+      {prefs.guiaPasos && <CadenaFlujo modulo="ventas" pasos={pasos} />}
       <Routes>
         <Route index element={<Navigate to="cotizaciones" replace />} />
         <Route path="cotizaciones" element={<CotizacionesPage />} />

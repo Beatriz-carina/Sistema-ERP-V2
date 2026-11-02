@@ -1,11 +1,13 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useErp } from '../../../core/hooks/useErp';
+import { usePreferencias } from '../../../core/hooks/usePreferencias';
 import { CadenaFlujo, type PasoFlujo } from '../../../core/components/CadenaFlujo';
 import { OrdenesCompraPage } from './OrdenesCompraPage';
 import { KardexPage } from './KardexPage';
 
 export const ComprasPage: React.FC = () => {
   const { state } = useErp();
+  const { prefs } = usePreferencias();
   const pagar = state.cuentas.filter((c) => c.tipo === 'Pagar');
 
   const pasos: PasoFlujo[] = [
@@ -19,7 +21,7 @@ export const ComprasPage: React.FC = () => {
 
   return (
     <div className="max-w-6xl space-y-6">
-      <CadenaFlujo modulo="compras" pasos={pasos} />
+      {prefs.guiaPasos && <CadenaFlujo modulo="compras" pasos={pasos} />}
       <Routes>
         <Route index element={<Navigate to="ordenes" replace />} />
         <Route path="ordenes" element={<OrdenesCompraPage />} />

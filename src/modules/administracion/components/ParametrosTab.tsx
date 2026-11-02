@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAccion } from '../../../core/hooks/useAccion';
+import { usePreferencias } from '../../../core/hooks/usePreferencias';
 import { API_MODE, api } from '../../../core/services/api';
 import { BUCKET_S3, DIAS_CREDITO, IGV, LIMITE_REGISTROS } from '../../../core/services/erpStore';
 import { Modal } from '../../../core/components/Modal';
@@ -7,6 +8,7 @@ import { EmpresaForm } from './EmpresaForm';
 
 export const ParametrosTab: React.FC = () => {
   const { enviando, ejecutar } = useAccion();
+  const { prefs, cambiar } = usePreferencias();
   const [confirmando, setConfirmando] = useState(false);
   const [aviso, setAviso] = useState(false);
 
@@ -32,6 +34,22 @@ export const ParametrosTab: React.FC = () => {
           </div>
         ))}
       </div>
+
+      <section className="bg-white border border-slate-200 rounded-xl p-5 flex flex-wrap items-center justify-between gap-4">
+        <div className="max-w-xl">
+          <h3 className="font-semibold text-slate-900">Guía de pasos</h3>
+          <p className="text-sm text-slate-500 mt-1">
+            Muestra la barra de pasos (Cotización → Orden → Factura → Cobro) en Ventas y Compras. Apágala si tus clientes no siguen siempre el mismo recorrido.
+          </p>
+        </div>
+        <button
+          type="button" role="switch" aria-checked={prefs.guiaPasos} aria-label="Guía de pasos"
+          onClick={() => cambiar('guiaPasos', !prefs.guiaPasos)}
+          className={`relative w-11 h-6 shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2 ${prefs.guiaPasos ? 'bg-teal-600' : 'bg-slate-300'}`}
+        >
+          <span aria-hidden="true" className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${prefs.guiaPasos ? 'translate-x-5' : ''}`} />
+        </button>
+      </section>
 
       <section className="bg-white border border-slate-200 rounded-xl p-5">
         <h3 className="font-semibold text-slate-900">Datos de demostración</h3>
