@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Misma tipografía que tenía el ERP dentro de NEXUS, para que se vea igual */
+body {
+  font-family: Outfit, system-ui, sans-serif;
+}
+
+h1, h2 { font-family: Syne, Outfit, sans-serif; }
+
+/* Impresión del comprobante: solo se imprime la hoja, en A4 y sin menús. */
+@page { size: A4; margin: 10mm; }
+@media print {
+  html, body, #root, #root * { overflow: visible !important; }
+  .h-screen { height: auto !important; }
+  body * { visibility: hidden; }
+  .comprobante, .comprobante * { visibility: visible; }
+  .comprobante { position: absolute; left: 0; top: 0; width: 100%; max-width: none; border: 0; box-shadow: none; padding: 0; }
+  .comprobante { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
