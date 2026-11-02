@@ -6,6 +6,8 @@ import { formatMoneda } from '../../utils/format';
 import { useAccion } from '../../hooks/useAccion';
 import { Buscador } from '../Buscador';
 import { Opciones } from '../Opciones';
+import { NuevoMaestroRapido } from './NuevoMaestroRapido';
+import type { Valores } from '../../../modules/mantenimiento/config/maestros';
 
 /** Documento que se está registrando. Los dos primeros son del lado de la venta. */
 export type Modo = 'cotizacion' | 'orden-venta' | 'orden-compra';
@@ -58,6 +60,21 @@ export const FormularioOperacion: React.FC<Props> = ({ modo, state, onGuardar, o
   const [errores, setErrores] = useState<Record<string, string>>({});
   const { enviando, ejecutar } = useAccion();
   const [errorGeneral, setErrorGeneral] = useState<string | null>(null);
+  /** Maestro que se está creando sin salir del formulario. */
+  const [nuevo, setNuevo] = useState<'tercero' | 'producto' | null>(null);
+
+  const alCrear = (id: string, v: Valores) => {
+    if (nuevo === 'tercero') {
+      setTerceroId(id);
+    } else {
+      const precio = String((esVenta ? v.precioVenta : v.precioCompra) ?? '');
+      // El producto nuevo ocupa la primera línea vacía; si no hay, se agrega una línea.
+      setLineas((ls) => ls.some((l) => l.productoId === '')
+        ? ls.map((l, i) => (i === ls.findIndex((x) => x.productoId === '') ? { ...l, productoId: id, precio } : l))
+        : [...ls, { productoId: id, cantidad: '1', precio }]);
+    }
+    setNuevo(null);
+  };
 
   const precioBase = (productoId: string): string => {
     const p = productos.find((x) => x.id === productoId);
@@ -106,10 +123,17 @@ export const FormularioOperacion: React.FC<Props> = ({ modo, state, onGuardar, o
   const etiqueta = 'block text-sm font-medium text-slate-700 mb-1';
 
   return (
+    <>
     <form onSubmit={enviar} noValidate className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor="op-tercero" className={etiqueta}>{esVenta ? 'Cliente' : 'Proveedor'}</label>
+          <div className="flex items-baseline justify-between">
+            <label htmlFor="op-tercero" className={etiqueta}>{esVenta ? 'Cliente' : 'Proveedor'}</label>
+            <button type="button" onClick={() => setNuevo('tercero')}
+              className="text-xs text-teal-700 hover:underline rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500">
+              + Nuevo {esVenta ? 'cliente' : 'proveedor'}
+            </button>
+          </div>
           <Buscador
             id="op-tercero" value={terceroId} onChange={setTerceroId} opciones={terceros}
             placeholder={esVenta ? 'Buscar cliente por nombre o documento' : 'Buscar proveedor por nombre o RUC'}
@@ -194,11 +218,17 @@ export const FormularioOperacion: React.FC<Props> = ({ modo, state, onGuardar, o
             </div>
           );
         })}
+        <div className="flex flex-wrap gap-x-6 gap-y-2">
         <button type="button" disabled={lineas.length >= productos.length}
           onClick={() => setLineas((ls) => [...ls, { productoId: '', cantidad: '1', precio: '' }])}
           className="inline-flex items-center gap-2 text-sm text-teal-700 hover:text-teal-800 disabled:text-slate-400 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 rounded">
           <Plus className="w-4 h-4" /> Agregar otro producto
         </button>
+        <button type="button" onClick={() => setNuevo('producto')}
+          className="inline-flex items-center gap-2 text-sm text-teal-700 hover:text-teal-800 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500">
+          <Plus className="w-4 h-4" /> Crear producto nuevo
+        </button>
+        </div>
       </fieldset>
 
       <dl className="ml-auto w-full sm:w-72 space-y-1 text-sm">
@@ -227,5 +257,14 @@ export const FormularioOperacion: React.FC<Props> = ({ modo, state, onGuardar, o
         </button>
       </div>
     </form>
+
+    {nuevo && (
+      <NuevoMaestroRapido
+        coleccion={nuevo === 'tercero' ? (esVenta ? 'clientes' : 'proveedores') : 'productos'}
+        onCreado={alCrear}
+        onCerrar={() => setNuevo(null)}
+      />
+    )}
+    </>
   );
 };
