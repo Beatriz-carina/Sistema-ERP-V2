@@ -19,7 +19,9 @@ export const ReportesPage: React.FC = () => {
   const filas = rangoInvalido ? [] : conTotal(reporte, reporte.filas(state, desde, hasta));
 
   const formato = (v: CeldaReporte, tipo: string): string | number =>
-    tipo === 'moneda' && typeof v === 'number' ? formatMoneda(v) : v;
+    tipo === 'moneda' && typeof v === 'number' ? formatMoneda(v)
+      : tipo === 'porcentaje' && typeof v === 'number' ? `${v > 0 ? '+' : ''}${v.toFixed(1)} %`
+      : v;
 
   const columnas: ColumnaTabla<CeldaReporte[]>[] = reporte.columnas.map((c, i) => ({
     titulo: c.titulo,

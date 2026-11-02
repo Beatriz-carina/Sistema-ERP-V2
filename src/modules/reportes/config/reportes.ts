@@ -2,7 +2,7 @@ import type { ErpState } from '../../../core/types';
 import { saldoCuenta, saldoDeCaja, stockDe } from '../../../core/services/erpStore';
 import { fechaLocal, formatFecha } from '../../../core/utils/format';
 
-export type TipoColumna = 'texto' | 'entero' | 'moneda';
+export type TipoColumna = 'texto' | 'entero' | 'moneda' | 'porcentaje';
 export interface ColumnaReporte { titulo: string; tipo: TipoColumna }
 export type CeldaReporte = string | number;
 
@@ -22,7 +22,45 @@ const enRango = (iso: string, desde: string, hasta: string): boolean => {
   return (desde === '' || f >= desde) && (hasta === '' || f <= hasta);
 };
 
+/** Mes de una fecha local (AAAA-MM) y el mes anterior a ese. */
+const mesDe = (iso: string): string => fechaLocal(iso).slice(0, 7);
+const mesAnteriorDe = (mes: string): string => {
+  const [a, m] = mes.split('-').map(Number);
+  return m === 1 ? `${a - 1}-12` : `${a}-${String(m - 1).padStart(2, '0')}`;
+};
+/** Variación porcentual; sin base de comparación (mes anterior en cero) no hay porcentaje que mostrar. */
+const variacionPct = (antes: number, ahora: number): CeldaReporte => (antes === 0 ? '-' : r2(((ahora - antes) / antes) * 100));
+
 export const REPORTES: Reporte[] = [
+  {
+    id: 'comparativo-mensual', titulo: 'Mes anterior vs. actual', usaFechas: false,
+    columnas: [
+      { titulo: 'Concepto', tipo: 'texto' }, { titulo: 'Mes anterior', tipo: 'moneda' }, { titulo: 'Mes actual', tipo: 'moneda' },
+      { titulo: 'Diferencia', tipo: 'moneda' }, { titulo: 'Variación', tipo: 'porcentaje' },
+    ],
+    sumar: [],
+    filas: (s) => {
+      const actual = mesDe(new Date().toISOString());
+      const previo = mesAnteriorDe(actual);
+      const ventasDe = (mes: string) => s.ventas.filter((v) => v.estado === 'Emitida' && mesDe(v.fecha) === mes);
+      const comprasDe = (mes: string) => s.compras.filter((c) => c.estado === 'Recibida' && mesDe(c.fecha) === mes);
+      // Misma fórmula del Dashboard: venta sin IGV menos el costo de lo vendido.
+      const utilidadDe = (mes: string) => ventasDe(mes).flatMap((v) => v.detalle).reduce((a, l) => {
+        const costo = s.productos.find((p) => p.id === l.productoId)?.precioCompra ?? l.precioUnitario;
+        return a + l.cantidad * (l.precioUnitario - costo);
+      }, 0);
+      const conceptos: [string, (mes: string) => number][] = [
+        ['Ventas (sin IGV)', (m) => ventasDe(m).reduce((a, v) => a + v.subtotal, 0)],
+        ['Compras (sin IGV)', (m) => comprasDe(m).reduce((a, c) => a + c.subtotal, 0)],
+        ['Utilidad bruta', utilidadDe],
+      ];
+      return conceptos.map(([nombre, valor]): CeldaReporte[] => {
+        const antes = r2(valor(previo));
+        const ahora = r2(valor(actual));
+        return [nombre, antes, ahora, r2(ahora - antes), variacionPct(antes, ahora)];
+      });
+    },
+  },
   {
     id: 'ventas-vendedor', titulo: 'Ventas por vendedor', usaFechas: true,
     columnas: [
